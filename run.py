@@ -1,6 +1,8 @@
 '''
 This code finds the relationship between the deflection angle and
 the Mach Number of the flow in a supersonic wind tunnel for a flat plate
+
+For future reference, we also want to incorporate a diamond or rounded airfoils
 '''
 
 import numpy as np 
