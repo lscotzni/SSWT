@@ -10,6 +10,8 @@ import openmdao.api as om
 
 from openmdao.api import Problem, Group, IndepVarComp
 
+from supersonic_wind_tunnel.flight_conditions_group import FlightConditionsGroup
+
 n = 1
 shape = (n,n)
 find = 'angle' # or Mach
@@ -26,3 +28,8 @@ if find == 'angle':
 elif find == 'Mach':
     global_variable.add_output('angle')
 prob.model.add_subsystem('global_variables_comp', global_variable, promotes = ['*'])
+
+flight_conditions_group = FlightConditionsGroup(
+    shape = shape,
+)
+prob.model.add_subsystem('flight_conditions_group', flight_conditions_group)
