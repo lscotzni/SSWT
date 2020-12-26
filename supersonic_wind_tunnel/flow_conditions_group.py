@@ -11,9 +11,11 @@ from lsdo_aircraft.atmosphere.sonic_speed_comp import SonicSpeedComp
 class FlowConditionsGroup(Group):
     def initialize(self):
         self.options.declare('shape', types = tuple)
+        self.options.declare('find', types = str)
 
     def setup(self):
         shape = self.options['shape']
+        # find = self.options['find']
 
         comp = PowerCombinationComp(
             shape=shape,
@@ -37,27 +39,32 @@ class FlowConditionsGroup(Group):
 
         # comp = ViscosityComp(shape=shape)
         # self.add_subsystem('viscosity_comp', comp, promotes=['*'])
+        # if find == 'angle':
+        #     comp = PowerCombinationComp(
+        #     shape=shape,
+        #     out_name='speed',
+        #     powers_dict=dict(
+        #         mach_number=1.,
+        #         sonic_speed=1.,
+        #     ),
+        #     )
+        #     self.add_subsystem('speed_comp', comp, promotes=['*'])
 
-        comp = PowerCombinationComp(
-            shape=shape,
-            out_name='speed',
-            powers_dict=dict(
-                mach_number=1.,
-                sonic_speed=1.,
-            ),
-        )
-        self.add_subsystem('speed_comp', comp, promotes=['*'])
+        #     comp = PowerCombinationComp(
+        #         shape=shape,
+        #         out_name='dynamic_pressure',
+        #         coeff=0.5,
+        #         powers_dict=dict(
+        #             density=1.,
+        #             speed=2.,
+        #         ),
+        #     )
+        #     self.add_subsystem('dynamic_pressure_comp', comp, promotes=['*'])
+        # else:
+        #     pass
 
-        comp = PowerCombinationComp(
-            shape=shape,
-            out_name='dynamic_pressure',
-            coeff=0.5,
-            powers_dict=dict(
-                density=1.,
-                speed=2.,
-            ),
-        )
-        self.add_subsystem('dynamic_pressure_comp', comp, promotes=['*'])
+
+        
 
         # need to edit mach number comp in atmosphere to find speed given sonic speed and mach number (input)
         # then connect this output speed to the dynamic_pressure_comp speed input

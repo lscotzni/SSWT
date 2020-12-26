@@ -1,1 +1,15 @@
 freestream values: same as outputs from atmosphere group (pressure, temperature, density)
+
+need to incorporate effects of high temperatures on specific heat ratio for 
+
+moment balance from upper/lower pressure, weight
+
+Prandtl-Meyer Function & flow angle to deflection angle relationship for oblique shocks
+
+optimization: force due to pressure difference is equal to the weight of the plate * cos(alpha)
+
+make individual groups for gamma, PM and oblique shocks
+    - for gamma group, connect atmosphere.constants into the run file and then have an if statement for 
+    temperature dependence
+    - for PM and oblique shocks, specify the input Mach number and angles as options and connect in each situation
+        i.e. for flat plate, have inputs for above and below for respective values
