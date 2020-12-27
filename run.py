@@ -29,24 +29,20 @@ We will try to implement these later, start with the simple case of constant gam
 '''
 
 prob = Problem()
-
 model = Group()
 
+# Defining Groups/Connections for Model ------------------------------------------------------------------------------
 global_variable = IndepVarComp()
-global_variable.add_output('altitude', val = 0.) # Can change to simulate conditions at different altitudes
-global_variable.add_output('plate_density', val = 0.)
-global_variable.add_output('gamma', val = 1.4)
-# if find == 'angle':
-#     global_variable.add_output('freestream_mach_number', val = 2.4)
-# elif find == 'mach_number':
-#     global_variable.add_output('deflection_angle', val = 19.) # deflection angle of plate in degrees
-global_variable.add_output('alpha', val = 19.) # deflection angle of plate in degrees
-global_variable.add_output('Mu_inf', val = 2.4)
+global_variable.add_output('altitude', val = 0., units = 'm') # Can change to simulate conditions at different altitudes
+global_variable.add_output('plate_length', val = 1., units = 'm')
+global_variable.add_output('plate_mass_per_unit_span', val = 2.87/9.81 * 101325.0, units = 'kg/m')
+global_variable.add_output('gamma', val = 1.4) 
+global_variable.add_output('alpha', val = 19., units = 'deg') # Deflection angle of plate in degrees (from the horizontal)
+global_variable.add_output('Mu_inf', val = 3.0) # Freestream mach number
 prob.model.add_subsystem('global_variables_comp', global_variable, promotes = ['*'])
 
 flow_conditions_group = FlowConditionsGroup(
     shape = shape,
-    # find = find,
 )
 prob.model.add_subsystem('flow_conditions_group', flow_conditions_group, promotes = ['*'])
 
@@ -73,23 +69,79 @@ moment_balance_group = MomentBalanceGroup(
 )
 prob.model.add_subsystem('moment_balance_group', moment_balance_group, promotes = ['*'])
 
+# Design Variables, Constraints and Objective ------------------------------------------------------------
+prob.model.add_design_var('Mu_inf', lower = 1.,scaler = 10)
+prob.model.add_design_var('alpha_lower_balance.beta_2', lower = 0., upper = 90., scaler = 100)
 
+prob.model.add_constraint('P1', lower = 0.)
+prob.model.add_constraint('P2', lower = 0.)
+prob.model.add_constraint('alpha_upper_balance.Mu_1', lower = 1.)
+# prob.model.add_constraint('alpha_lower_balance.beta_2', lower = 0., upper = 90.)
 
-# --------------------------
+prob.model.add_objective('moment_balance')
 
 prob.setup()
 
+# Optimizer, Driver and Setup ----------------------------------------------------------------------------
+
+
+prob.model.front_PM_expansion_group.nonlinear_solver = om.NewtonSolver()
+prob.model.front_PM_expansion_group.linear_solver = om.DirectSolver()
+
+prob.model.front_PM_expansion_group.nonlinear_solver.options['iprint'] = 2
+prob.model.front_PM_expansion_group.nonlinear_solver.options['maxiter'] = 100
+prob.model.front_PM_expansion_group.nonlinear_solver.options['solve_subsystems'] = True
+
+prob.model.front_oblique_shock_group.nonlinear_solver = om.NewtonSolver()
+prob.model.front_oblique_shock_group.linear_solver = om.DirectSolver()
+
+prob.model.front_oblique_shock_group.nonlinear_solver.options['iprint'] = 2
+prob.model.front_oblique_shock_group.nonlinear_solver.options['maxiter'] = 100
+prob.model.front_oblique_shock_group.nonlinear_solver.options['solve_subsystems'] = True
+
+
+# prob.model.nonlinear_solver = om.NewtonSolver()
+# prob.model.linear_solver = om.DirectSolver()
+
+# prob.model.nonlinear_solver.options['iprint'] = 2
+# prob.model.nonlinear_solver.options['maxiter'] = 100
+# prob.model.nonlinear_solver.options['solve_subsystems'] = True
+
+# old way
+prob.driver = om.ScipyOptimizeDriver()
+prob.driver.options['optimizer'] = 'SLSQP' # 'COBYLA', 'SLSQP'
+prob.driver.options['tol'] = 1e-7
+prob.driver.opt_settings['maxiter'] = 100
+prob.driver.options['disp'] = True
+
+
+
+
+
 # Initial guesses
-prob['alpha_upper_balance.Mu_1'] = 3.3308
-prob['alpha_lower_balance.beta_2'] = 43.
-prob['plate_density'] = 2.87/9.81 * 0.101325
+# prob['alpha_upper_balance.Mu_1'] = 3.3308
+# prob['alpha_lower_balance.beta_2'] = 43.
+prob['alpha_upper_balance.Mu_1'] = 5.0
+prob['alpha_lower_balance.beta_2'] = 59.
 
-prob.run_model()
+# prob.run_model()
+prob.run_driver()
 
+
+# Printing values to check solution
 print(prob['pressure_MPa'])
 print(prob['P1'])
 print(prob['P2'])
 print(prob['alpha_upper_balance.Mu_1'])
+print(prob['plate_mass_per_unit_span'])
 print(prob['delta_P'])
 print(prob['weight_moment'])
 print(prob['moment_balance'])
+
+print('----------------------------------------------------')
+
+print(prob['alpha_2'])
+
+print(prob['alpha_upper_balance.Mu_1'])
+print(prob['alpha_lower_balance.beta_2'])
+print(prob['Mu_inf'])
